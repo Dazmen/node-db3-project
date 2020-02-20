@@ -42,6 +42,7 @@ router.get('/:id/steps', (req, res) => {
     }
   })
   .catch(err => {
+    console.log(err)
     res.status(500).json({ message: 'Failed to get steps' });
   });
 });
@@ -100,7 +101,6 @@ router.put('/:id', (req, res) => {
 
 router.delete('/:id', (req, res) => {
   const { id } = req.params;
-
   Schemes.remove(id)
   .then(deleted => {
     if (deleted) {
@@ -113,5 +113,38 @@ router.delete('/:id', (req, res) => {
     res.status(500).json({ message: 'Failed to delete scheme' });
   });
 });
+router.post('/:id/addstep', validateSchemeId, validateStepBody, (req, res) => {
+  Schemes.addStep(req.body, req.params.id)
+    .then(res => {
+      res.json(201).json(res)
+    })
+    .catch(err => {
+      res.status(500).json({ message: 'Failed to post step' });
+    });
+})
 
 module.exports = router;
+
+function validateStepBody(req, res, next){
+  const body = req.body;
+  if(body.instructions && body.step_number){
+    next();
+  } else {
+    console.log(body);
+    res.status(400).json({ error: "Please provide valid instructions and step"})
+  }
+};
+function validateSchemeId(req, res, next){
+  Schemes.findById(req.params.id)
+    .then(scheme => {
+      if(scheme){
+        next();
+      } else {
+        console.log(scheme)
+        res.status(404).json({ error: "Scheme with this ID does not exist"})
+      }
+    })
+    .catch(err => {
+      res.status(500).json({ message: 'Failed to retrieve scheme' });
+    });
+};
